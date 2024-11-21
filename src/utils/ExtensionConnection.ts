@@ -1,3 +1,5 @@
+import { EventEmitter } from 'eventemitter3';
+
 interface HandshakeMessage {
     type: '__handshake';
     nonce: number;
@@ -22,11 +24,22 @@ const isHandshakeAckMessage = (message: unknown): message is HandshakeAckMessage
         'nonce' in message;
 }
 
-export class ExtensionConnection {
+interface EventHandler<T> {
+    (data: T): void;
+}
+
+interface ExtensionConnectionEventMap {
+    isconnectedchanged: EventHandler<{ isConnected: boolean }>;
+    message: EventHandler<{ message: unknown }>;
+}
+
+export class ExtensionConnection extends EventEmitter<ExtensionConnectionEventMap> {
     #isConnected: boolean = false;
     #port: chrome.runtime.Port | null = null;
 
     constructor() {
+        super();
+
         chrome.runtime.onConnect.addListener(this.#onRuntimeConnect);
         this.connect();
         window.addEventListener('beforeunload', this.#onWindowBeforeUnload);
@@ -99,7 +112,6 @@ export class ExtensionConnection {
     }
 
     #onPortMessage = (message: unknown) => {
-        console.log('[#onPortMessage] Message:', { message });
         if (isHandshakeMessage(message)) {
             const handshakeAck: HandshakeAckMessage = {
                 type: '__handshakeAck',
@@ -108,7 +120,12 @@ export class ExtensionConnection {
             this.#port?.postMessage(handshakeAck);
             return;
         }
-        // TODO: Emit event
+        if (isHandshakeAckMessage(message)) {
+            return;
+        }
+        
+        console.log('[#onPortMessage] Message:', { message });
+        this.emit('message', { message })
     }
 
     #onRuntimeConnect = (port: chrome.runtime.Port) => {
@@ -139,14 +156,22 @@ export class ExtensionConnection {
         port.onDisconnect.addListener(this.#onPortDisconnect);
         const success = !requiresHandshake || await this.#handshake(port);
         if (success) {
-            this.#isConnected = true;
+            this.#setIsConnected(true);
             this.#port = port;
         }
         return success;
     }
 
+    #setIsConnected = (value: boolean) => {
+        if (this.#isConnected === value) {
+            return;
+        }
+        this.#isConnected = value;
+        this.emit('isconnectedchanged', { isConnected: value });
+    }
+
     #unregisterPort = (port: chrome.runtime.Port) => {
-        this.#isConnected = false;
+        this.#setIsConnected(false);
         port.onMessage.removeListener(this.#onPortMessage);
         port.onDisconnect.removeListener(this.#onPortDisconnect);
         this.#port = null;

@@ -1,16 +1,16 @@
 import { ExtensionConnection } from "./utils/ExtensionConnection";
+import { mountDebugUI } from "./utils/mountDebugUI";
 
-const sendButton = document.getElementById('send');
-const input = document.getElementById('input');
+const { addMessageEntry, setConnectedState, setSendMessageCallback } = mountDebugUI();
 
 const connection = new ExtensionConnection();
+
+// Mounting to window for debugging
 (self as any).connection = connection;
 
+connection.addListener('isconnectedchanged', ({ isConnected }) => setConnectedState(isConnected));
+connection.addListener('message', ({ message }) => addMessageEntry(`Message received: ${JSON.stringify(message)}`));
 
-if (sendButton && input) {
-    sendButton.addEventListener("click", () => {
-        const message = { data: input.value };
-        console.log("Sending message to Content:", { message });
-        connection.sendMessage(message);
-    });
-}
+setSendMessageCallback((message) => {
+    connection.sendMessage(message);
+});
