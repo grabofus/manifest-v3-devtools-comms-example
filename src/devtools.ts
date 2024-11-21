@@ -1,0 +1,1 @@
+chrome.devtools.panels.create('DevTools Comms Example', "", '../devtools_panel.html');

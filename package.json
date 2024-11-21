@@ -1,0 +1,19 @@
+{
+  "name": "manifest-v3-devtools-comms-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node build.js --watch",
+    "build": "node build.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chrome": "^0.0.281",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}
