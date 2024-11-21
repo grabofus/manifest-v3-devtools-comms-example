@@ -3,7 +3,7 @@
   "version": "1.0",
   "devtools_page": "devtools.html",
   "manifest_version": 3,
-  "permissions": ["scripting", "activeTab", "webNavigation", "tabs"],
+  "permissions": [],
   "host_permissions": ["*://*/*", "<all_urls>"],
   "content_scripts": [
     {
